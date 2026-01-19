@@ -28,3 +28,7 @@
 }
 
 # --- Site Blocks ---
+
+caffenero-website.dev.redgrain.co.uk {
+    import laravel-vite caffenero-website
+}
