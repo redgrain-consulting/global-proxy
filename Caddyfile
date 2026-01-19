@@ -1,0 +1,30 @@
+{
+    servers {
+        trusted_proxies static private_ranges
+    }
+}
+
+# Arguments: {args[0]} = container name
+(laravel-vite) {
+    @vitePaths {
+        path /@vite* /node_modules/* /resources/*
+    }
+    
+    handle @vitePaths {
+        reverse_proxy {args[0]}:5173 {
+            header_up Host {host}
+            header_up Origin {>Origin}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    handle {
+        reverse_proxy {args[0]}:80
+    }
+
+    tls /etc/caddy/certs/local.crt /etc/caddy/certs/local.key
+}
+
+# --- Site Blocks ---

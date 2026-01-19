@@ -1,0 +1,24 @@
+services:
+  caddy:
+    image: caddy:latest
+    container_name: global-proxy-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"        # HTTP
+      - "443:443"      # HTTPS
+      - "443:443/udp"  # HTTP/3 support
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./certs:/etc/caddy/certs
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - dev-proxy-network # All dev containers must join this shared network
+
+networks:
+  dev-proxy-network:
+    external: true # This network must be created manually once
+
+volumes:
+  caddy_data:
+  caddy_config:
