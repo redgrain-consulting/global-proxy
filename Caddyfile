@@ -36,3 +36,7 @@ caffenero-website.dev.redgrain.co.uk {
 coffee1-website.dev.redgrain.co.uk {
     import laravel-vite coffee1-website
 }
+
+harrisandhoole.dev.redgrain.co.uk {
+    import laravel-vite harrisandhoole
+}
