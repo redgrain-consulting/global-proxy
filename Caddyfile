@@ -1,42 +1,55 @@
 {
-    servers {
-        trusted_proxies static private_ranges
-    }
+	servers {
+		trusted_proxies static private_ranges
+	}
 }
 
 # Arguments: {args[0]} = container name
 (laravel-vite) {
-    @vitePaths {
-        path /@id* /@vite* /node_modules/* /resources/*
-    }
-    
-    handle @vitePaths {
-        reverse_proxy {args[0]}:5173 {
-            header_up Host {host}
-            header_up Origin {>Origin}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
-    }
+	@vitePaths {
+		path /@id* /@vite* /node_modules/* /resources/*
+	}
 
-    handle {
-        reverse_proxy {args[0]}:80
-    }
+	handle @vitePaths {
+		reverse_proxy {args[0]}:5173 {
+			header_up Host {header.Host}
+			header_up Origin {>Origin}
+			header_up X-Real-IP {remote}
+		}
+	}
 
-    tls /etc/caddy/certs/local.crt /etc/caddy/certs/local.key
+	handle {
+		reverse_proxy {args[0]}:80
+	}
 }
 
 # --- Site Blocks ---
 
-caffenero-website.dev.redgrain.co.uk {
-    import laravel-vite caffenero-website
-}
+*.dev.redgrain.co.uk {
+	# Note: Using a wildcard block requires specific logic to determine 
+	# the container name, so keeping them explicit is fine, 
+	# or use a map if you have dozens.
 
-coffee1-website.dev.redgrain.co.uk {
-    import laravel-vite coffee1-website
-}
+	log
 
-harrisandhoole.dev.redgrain.co.uk {
-    import laravel-vite harrisandhoole
+	tls /etc/caddy/certs/local.crt /etc/caddy/certs/local.key
+
+	@caffenero host caffenero.dev.redgrain.co.uk
+	handle @caffenero {
+		import laravel-vite caffenero
+	}
+
+	@coffee1 host coffee1-website.dev.redgrain.co.uk
+	handle @coffee1 {
+		import laravel-vite coffee1-website
+	}
+
+	@harrisandhoole host harrisandhoole.dev.redgrain.co.uk
+	handle @harrisandhoole {
+		import laravel-vite harrisandhoole
+	}
+
+    handle {
+        abort
+    }
 }
