@@ -26,8 +26,8 @@
 # --- Site Blocks ---
 
 *.dev.redgrain.co.uk {
-	# Note: Using a wildcard block requires specific logic to determine 
-	# the container name, so keeping them explicit is fine, 
+	# Note: Using a wildcard block requires specific logic to determine
+	# the container name, so keeping them explicit is fine,
 	# or use a map if you have dozens.
 
 	log
