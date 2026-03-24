@@ -33,8 +33,8 @@
         header_up X-Real-IP {remote}
         
         # Required for React Router v7 Fast Refresh (WebSockets)
-        header_up Connection {>Connection}
-        header_up Upgrade {>Upgrade}
+        #header_up Connection {>Connection}
+        #header_up Upgrade {>Upgrade}
     }
 }
 
@@ -79,7 +79,7 @@
 
 	@caffenero-website-hydrogen host caffenero-website-hydrogen.dev.redgrain.co.uk
 	handle @caffenero-website-hydrogen {
-		import react-router caffenero-website-hydrogen
+		import react-router-v7 caffenero-website-hydrogen
 	}
 
 	@caffenero-website-statamic host caffenero-website-statamic.dev.redgrain.co.uk
