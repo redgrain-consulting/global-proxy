@@ -2,6 +2,14 @@
 	servers {
 		trusted_proxies static private_ranges
 	}
+    # Global log settings
+    log {
+        output file /data/logs/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+        format json  # This is the 'encoder'
+    }
 }
 
 # Arguments: {args[0]} = container name
@@ -50,19 +58,6 @@
 }
 
 # Arguments: {args[0]} = container name
-(react-router-v7) {
-	reverse_proxy {args[0]}:3000 {
-        header_up Host {host}
-        header_up Origin {>Origin}
-        header_up X-Real-IP {remote}
-        
-        # Required for React Router v7 Fast Refresh (WebSockets)
-        #header_up Connection {>Connection}
-        #header_up Upgrade {>Upgrade}
-    }
-}
-
-# Arguments: {args[0]} = container name
 (turbo) {
 	reverse_proxy {args[0]}:3000 {
         header_up Host {host}
@@ -72,6 +67,76 @@
         # Required for Next.js Fast Refresh (WebSockets)
         header_up Connection {>Connection}
         header_up Upgrade {>Upgrade}
+    }
+}
+
+# Arguments: {args[0]} = container name
+(react-router-v7) {
+    # Match only WebSocket-specific paths used by Vite/React Router HMR
+    @websockets {
+        header Connection *Upgrade*
+        header Upgrade    websocket
+        path /@vite-hmr*
+    }
+
+    # Handle WebSocket traffic with forced Upgrade headers
+    handle @websockets {
+        reverse_proxy {args[0]}:3000 {
+            header_up Host {host}
+            header_up Origin {>Origin}
+            header_up X-Real-IP {remote}
+            header_up Connection "Upgrade"
+            header_up Upgrade "websocket"
+        }
+    }
+
+    # Handle all other standard HTTP traffic (No Upgrade headers)
+    # This prevents the 500 Internal Server Error in Hydrogen/RRv7
+    handle {
+        reverse_proxy {args[0]}:3000 {
+            header_up Host {host}
+            header_up Origin {>Origin}
+            header_up X-Real-IP {remote}
+        }
+    }
+}
+
+# Arguments: {args[0]} = container name
+(storybook) {
+    # Match Storybook's internal communication channel and Vite HMR paths
+    @storybookWS {
+        header Connection *Upgrade*
+        header Upgrade    websocket
+        path /storybook-server-channel* /@vite-hmr* /@vite/* /virtual:/*
+    }
+
+    # Handle Storybook WebSockets and Virtual Vite modules
+    handle @storybookWS {
+        reverse_proxy https://{args[0]}:6006 {
+            header_up Host {host}
+            header_up Origin {>Origin}
+            header_up X-Real-IP {remote}
+            header_up Connection "Upgrade"
+            header_up Upgrade "websocket"
+
+            # Required because Storybook runs with self-signed certs inside the container
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+
+    # Handle standard Storybook HTTP traffic
+    handle {
+        reverse_proxy https://{args[0]}:6006 {
+            header_up Host {host}
+            header_up Origin {>Origin}
+            header_up X-Real-IP {remote}
+            
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
     }
 }
 
@@ -88,35 +153,119 @@
 
 	@caffenero host caffenero.dev.redgrain.co.uk
 	handle @caffenero {
-		import laravel-vite caffenero
-	}
+        route {
+            log {
+                output file /data/logs/caffenero.log
+                format json
+            }
 
-	@caffenero-website-catalyst host caffenero-website-catalyst.dev.redgrain.co.uk
-	handle @caffenero-website-catalyst {
-		import turbo caffenero-website-catalyst
-	}
-
-	@caffenero-website-hydrogen host caffenero-website-hydrogen.dev.redgrain.co.uk
-	handle @caffenero-website-hydrogen {
-		import react-router-v7 caffenero-website-hydrogen
+            import laravel-vite caffenero
+        }
 	}
 
 	@caffenero-statamic host caffenero-statamic.dev.redgrain.co.uk
 	handle @caffenero-statamic {
-		import laravel-vite caffenero-statamic
+        route {
+            log {
+                output file /data/logs/caffenero-statamic.log
+                format json
+            }
+
+            import laravel-vite caffenero-statamic
+        }
+	}
+
+	@caffenero-website-catalyst host caffenero-website-catalyst.dev.redgrain.co.uk
+	handle @caffenero-website-catalyst {
+        route {
+            log {
+                output file /data/logs/caffenero-website-catalyst.log
+                format json
+            }
+
+            import turbo caffenero-website-catalyst
+        }
+	}
+
+	@caffenero-website-hydrogen host caffenero-website-hydrogen.dev.redgrain.co.uk
+	handle @caffenero-website-hydrogen {
+        route {
+            log {
+                output file /data/logs/caffenero-website-hydrogen.log
+                format json
+            }
+
+            import react-router-v7 caffenero-website-hydrogen
+        }
 	}
 
 	@coffee1 host coffee1-website.dev.redgrain.co.uk
 	handle @coffee1 {
-		import laravel-vite coffee1-website
+        route {
+            log {
+                output file /data/logs/coffee1.log
+                format json
+            }
+
+            import laravel-vite coffee1-website
+        }
 	}
 
 	@harrisandhoole host harrisandhoole.dev.redgrain.co.uk
 	handle @harrisandhoole {
-		import laravel-vite harrisandhoole
+        route {
+            log {
+                output file /data/logs/caffenero.log
+                format json
+            }
+
+            import laravel-vite harrisandhoole
+        }
 	}
 
     handle {
         abort
     }
+}
+
+# --- Storybook Port 6006 Block ---
+
+*.dev.redgrain.co.uk:6006 {
+	log
+
+	tls /etc/caddy/certs/local.crt /etc/caddy/certs/local.key
+
+	@caffenero host caffenero.dev.redgrain.co.uk
+	handle @caffenero {
+		import storybook caffenero
+	}
+
+	@caffenero-statamic host caffenero-statamic.dev.redgrain.co.uk
+	handle @caffenero-statamic {
+		import storybook caffenero-statamic
+	}
+
+	@caffenero-website-catalyst host caffenero-website-catalyst.dev.redgrain.co.uk
+	handle @caffenero-website-catalyst {
+		import storybook caffenero-website-catalyst
+	}
+
+	@caffenero-website-hydrogen host caffenero-website-hydrogen.dev.redgrain.co.uk
+	handle @caffenero-website-hydrogen {
+		import storybook caffenero-website-hydrogen
+	}
+
+	@coffee1 host coffee1-website.dev.redgrain.co.uk
+	handle @coffee1 {
+		import storybook coffee1-website
+	}
+
+	@harrisandhoole host harrisandhoole.dev.redgrain.co.uk
+	handle @harrisandhoole {
+		import storybook harrisandhoole
+	}
+
+	handle {
+		abort
+	}
 }

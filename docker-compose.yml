@@ -14,9 +14,11 @@ services:
       - "80:80" # HTTP
       - "443:443" # HTTPS
       - "443:443/udp" # HTTP/3 support
+      - "6006:6006"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./certs:/etc/caddy/certs
+      - ./logs:/data/logs
       - caddy_data:/data
       - caddy_config:/config
     <<: *network
