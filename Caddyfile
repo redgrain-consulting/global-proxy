@@ -6,31 +6,30 @@
 
 # Arguments: {args[0]} = container name
 (laravel-vite) {
-    # 1. Match ALL paths that must go to the Vite Dev Server (Port 5173)
-    # This includes the assets currently 404ing
+    # 1. Match ALL paths that must be served by the Vite Dev Server (Port 5173)
     @vite {
-        path /@vite-hmr* /@vite/* /@id/* /@fs/* /resources/* /vendor/statamic/cp/build/*
+        path /@vite-hmr* /@vite/* /@id/* /@fs/* /resources/* /node_modules/* /vendor/statamic/cp/build/*
     }
 
     handle @vite {
-        # Check if this specific request is a WebSocket upgrade
+        # Check if this specific request is a WebSocket upgrade attempt
         @isWS {
             header Connection *Upgrade*
             header Upgrade    websocket
         }
 
-        # If it's a WebSocket (HMR), send with required headers
+        # If it's a WebSocket (HMR), force the Upgrade headers
         handle @isWS {
             reverse_proxy {args[0]}:5173 {
                 header_up Host {host}
                 header_up Origin {>Origin}
                 header_up X-Real-IP {remote}
-                header_up Connection {>Connection}
-                header_up Upgrade {>Upgrade}
+                header_up Connection "Upgrade"
+                header_up Upgrade "websocket"
             }
         }
 
-        # If it's a standard asset request (GET /@vite/client, etc.), send normally
+        # For standard GET requests (assets, node_modules), proxy WITHOUT Upgrade headers
         handle {
             reverse_proxy {args[0]}:5173 {
                 header_up Host {host}
@@ -40,12 +39,12 @@
         }
     }
 
-    # 2. Route everything else (PHP/Statamic) to Nginx (Port 80)
+    # 2. Route all other traffic (PHP/Statamic) to Nginx (Port 80)
     handle {
         reverse_proxy {args[0]}:80 {
             header_up Host {host}
             header_up X-Real-IP {remote}
-            header_up X-Forwarded-Proto https 
+            header_up X-Forwarded-Proto https
         }
     }
 }
