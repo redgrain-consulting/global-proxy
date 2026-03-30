@@ -68,18 +68,17 @@
     }
 }
 
-# Arguments: {args[0]} = container name
 (react-router-v7) {
-    # Match only WebSocket-specific paths used by Vite/React Router HMR
+    # Match only WebSocket-specific paths
     @websockets {
         header Connection *Upgrade*
         header Upgrade    websocket
         path /@vite-hmr*
     }
 
-    # Handle WebSocket traffic with forced Upgrade headers
     handle @websockets {
-        reverse_proxy {args[0]}:3000 {
+        # CHANGE 3000 TO THE ACTUAL PORT FOUND IN hydrogen.log
+        reverse_proxy {args[0]}:3000 { 
             header_up Host {host}
             header_up Origin {>Origin}
             header_up X-Real-IP {remote}
@@ -88,10 +87,9 @@
         }
     }
 
-    # Handle all other standard HTTP traffic (No Upgrade headers)
-    # This prevents the 500 Internal Server Error in Hydrogen/RRv7
     handle {
-        reverse_proxy {args[0]}:3000 {
+        # CHANGE 3000 TO THE ACTUAL PORT
+        reverse_proxy {args[0]}:3000 { 
             header_up Host {host}
             header_up Origin {>Origin}
             header_up X-Real-IP {remote}
@@ -100,23 +98,23 @@
 }
 
 (storybook) {
-    # Added /@id/* and /@fs/* to the matcher
+    # Added /@id/* and /@fs/* to support Vite virtual modules
     @storybookWS {
         header Connection *Upgrade*
         header Upgrade    websocket
-        path /storybook-server-channel* /@vite-hmr* /@vite/* /@id/* /@fs/* /virtual:/* 
+        path /storybook-server-channel* /@vite-hmr* /@vite/* /@id/* /@fs/* /virtual:/*
     }
 
     handle @storybookWS {
-        reverse_proxy https://{args[0]}:6006 { 
+        reverse_proxy https://{args[0]}:6006 {
             header_up Host {host}
             header_up Origin {>Origin}
             header_up X-Real-IP {remote}
             header_up Connection "Upgrade"
             header_up Upgrade "websocket"
-
+            
             transport http {
-                tls_insecure_skip_verify
+                tls_insecure_skip_verify 
             }
         }
     }
@@ -128,7 +126,7 @@
             header_up X-Real-IP {remote}
             
             transport http {
-                tls_insecure_skip_verify
+                tls_insecure_skip_verify 
             }
         }
     }
@@ -190,8 +188,6 @@ harrisandhoole.dev.redgrain.co.uk {
 	import laravel-vite harrisandhoole
 }
 
-# --- Storybook Port 6006 Block ---
-
 *.dev.redgrain.co.uk:6006 {
 	import tls-config
 
@@ -199,32 +195,32 @@ harrisandhoole.dev.redgrain.co.uk {
     # no assets (even ones with the port) are rejected.
     @storybook-hosts host caffenero.dev.redgrain.co.uk:6006 caffenero-website-catalyst.dev.redgrain.co.uk:6006 caffenero-website-hydrogen.dev.redgrain.co.uk:6006 caffenero-statamic.dev.redgrain.co.uk:6006 coffee1-website.dev.redgrain.co.uk:6006 harrisandhoole.dev.redgrain.co.uk:6006
 
-	@caffenero host caffenero.dev.redgrain.co.uk:6006
+	@caffenero header_regexp Host ^caffenero\.dev\.redgrain\.co\.uk(:6006)?$
 	handle @caffenero {
 		import storybook caffenero
 	}
 
-	@caffenero-statamic host caffenero-statamic.dev.redgrain.co.uk:6006
+	@caffenero-statamic header_regexp Host ^caffenero-statamic\.dev\.redgrain\.co\.uk(:6006)?$
 	handle @caffenero-statamic {
 		import storybook caffenero-statamic
 	}
 
-	@caffenero-website-catalyst host caffenero-website-catalyst.dev.redgrain.co.uk:6006
+	@caffenero-website-catalyst header_regexp Host ^caffenero-website-catalyst\.dev\.redgrain\.co\.uk(:6006)?$
 	handle @caffenero-website-catalyst {
 		import storybook caffenero-website-catalyst
 	}
 
-	@caffenero-website-hydrogen host caffenero-website-hydrogen.dev.redgrain.co.uk:6006
+	@caffenero-website-hydrogen header_regexp Host ^caffenero-website-hydrogen\.dev\.redgrain\.co\.uk(:6006)?$
 	handle @caffenero-website-hydrogen {
 		import storybook caffenero-website-hydrogen
 	}
 
-	@coffee1 host coffee1-website.dev.redgrain.co.uk:6006
+	@coffee1 header_regexp Host ^coffee1-website\.dev\.redgrain\.co\.uk(:6006)?$
 	handle @coffee1 {
 		import storybook coffee1-website
 	}
 
-	@harrisandhoole host harrisandhoole.dev.redgrain.co.uk:6006
+	@harrisandhoole header_regexp Host ^harrisandhoole\.dev\.redgrain\.co\.uk(:6006)?$
 	handle @harrisandhoole {
 		import storybook harrisandhoole
 	}
