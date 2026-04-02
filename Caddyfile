@@ -142,31 +142,40 @@ caffenero-statamic.dev.redgrain.co.uk {
 	import laravel-vite caffenero-statamic
 }
 
-caffenero-website-catalyst.dev.redgrain.co.uk {
+caffenero-catalyst.dev.redgrain.co.uk {
 	import tls-config
 	log {
-		output file /data/logs/caffenero-website-catalyst.log
+		output file /data/logs/caffenero-catalyst.log
 		format json
 	}
-	import turbo caffenero-website-catalyst
+	import turbo caffenero-catalyst
 }
 
-caffenero-website-hydrogen.dev.redgrain.co.uk {
-	import tls-config
-	log {
-		output file /data/logs/caffenero-website-hydrogen.log
-		format json
-	}
-	import react-router-v7 caffenero-website-hydrogen
-}
-
-caffenero-website-hydrogen-storybook.dev.redgrain.co.uk {
+caffenero-catalyst-storybook.dev.redgrain.co.uk {
     import tls-config
     log {
-		output file /data/logs/caffenero-website-hydrogen-storybook.log
+		output file /data/logs/caffenero-catalyst-storybook.log
 		format json
 	}
-    import storybook caffenero-website-storybook-hydrogen
+    import storybook caffenero-storybook-catalyst
+}
+
+caffenero-hydrogen.dev.redgrain.co.uk {
+	import tls-config
+	log {
+		output file /data/logs/caffenero-hydrogen.log
+		format json
+	}
+	import react-router-v7 caffenero-hydrogen
+}
+
+caffenero-hydrogen-storybook.dev.redgrain.co.uk {
+    import tls-config
+    log {
+		output file /data/logs/caffenero-hydrogen-storybook.log
+		format json
+	}
+    import storybook caffenero-storybook-hydrogen
 }
 
 coffee1-website.dev.redgrain.co.uk {
