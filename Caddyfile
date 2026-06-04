@@ -56,6 +56,35 @@
 }
 
 # Arguments: {args[0]} = container name
+(laravel-webpack) {
+    # Securely capture and pipe BrowserSync's WebSockets protocol stream
+    @websockets {
+        header Connection *Upgrade*
+        header Upgrade    websocket
+        path /browser-sync/*
+    }
+
+    handle @websockets {
+        reverse_proxy {args[0]}:3000 {
+            header_up Host {host}
+            header_up Origin {>Origin}
+            header_up X-Real-IP {remote}
+            header_up Connection "Upgrade"
+            header_up Upgrade "websocket"
+        }
+    }
+
+    # Proxy all standard web asset traffic through BrowserSync's port 3000
+    handle {
+        reverse_proxy {args[0]}:3000 {
+            header_up Host {host}
+            header_up Origin {>Origin}
+            header_up X-Real-IP {remote}
+        }
+    }
+}
+
+# Arguments: {args[0]} = container name
 (turbo) {
     handle {
         # Check if this specific request is a WebSocket upgrade attempt
@@ -153,7 +182,16 @@ caffenero.dev.redgrain.co.uk {
 		output file /data/logs/caffenero.log
 		format json
 	}
-	import laravel-vite caffenero
+	import laravel-webpack caffenero
+}
+
+caffenero-website.dev.redgrain.co.uk {
+	import tls-config
+	log {
+		output file /data/logs/caffenero-website.log
+		format json
+	}
+	import laravel-webpack caffenero-website
 }
 
 caffenero-statamic.dev.redgrain.co.uk {
