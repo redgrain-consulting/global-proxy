@@ -11,38 +11,6 @@
 }
 
 # Arguments: {args[0]} = container name
-(laravel-mix) {
-    # 1. Match ALL paths that must be served by the Mix Dev Server (Port 8080)
-    @mix {
-        path /hot* /mix-manifest.json /js/* /css/* /images/* /fonts/* /vendor/statamic/cp/build/*
-    }
-
-    handle @mix {
-        # Check if this specific request is a WebSocket upgrade attempt
-        @isWS {
-            header Connection *Upgrade*
-            header Upgrade    websocket
-        }
-
-        handle @isWS {
-            reverse_proxy {args[0]}:8080 {
-                header_up Host {host}
-                header_up Origin {>Origin}
-                header_up X-Real-IP {remote}
-                header_up Connection "Upgrade"
-                header_up Upgrade "websocket"
-            }
-        }
-        handle {
-            reverse_proxy {args[0]}:8080 {
-                header_up Host {host}
-                header_up Origin {>Origin}
-                header_up X-Real-IP {remote}
-            }
-        }
-    }
-}
-
 (laravel-vite) {
     # 1. Match ALL paths that must be served by the Vite Dev Server (Port 5173)
     @vite {
@@ -83,6 +51,35 @@
             header_up Host {host}
             header_up X-Real-IP {remote}
             header_up X-Forwarded-Proto https
+        }
+    }
+}
+
+# Arguments: {args[0]} = container name
+(laravel-webpack) {
+    # Securely capture and pipe BrowserSync's WebSockets protocol stream
+    @websockets {
+        header Connection *Upgrade*
+        header Upgrade    websocket
+        path /browser-sync/*
+    }
+
+    handle @websockets {
+        reverse_proxy {args[0]}:3000 {
+            header_up Host {host}
+            header_up Origin {>Origin}
+            header_up X-Real-IP {remote}
+            header_up Connection "Upgrade"
+            header_up Upgrade "websocket"
+        }
+    }
+
+    # Proxy all standard web asset traffic through BrowserSync's port 3000
+    handle {
+        reverse_proxy {args[0]}:3000 {
+            header_up Host {host}
+            header_up Origin {>Origin}
+            header_up X-Real-IP {remote}
         }
     }
 }
@@ -182,10 +179,19 @@
 caffenero.dev.redgrain.co.uk {
 	import tls-config
 	log {
+		output file /data/logs/caffenero.log
+		format json
+	}
+	import laravel-webpack caffenero
+}
+
+caffenero-website.dev.redgrain.co.uk {
+	import tls-config
+	log {
 		output file /data/logs/caffenero-website.log
 		format json
 	}
-    import laravel-mix caffenero-website
+	import laravel-webpack caffenero-website
 }
 
 caffenero-statamic.dev.redgrain.co.uk {
