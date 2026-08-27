@@ -7,7 +7,7 @@
 }
 
 (tls-config) {
-    tls /etc/caddy/certs/local.crt /etc/caddy/certs/local.key
+    tls /etc/caddy/certs/local.fullchain.crt /etc/caddy/certs/local.key
 }
 
 # Arguments: {args[0]} = container name
@@ -105,7 +105,7 @@
                 header_up X-Forwarded-Proto https
             }
         }
-        
+
         reverse_proxy {args[0]}:3000 {
             header_up Host {host}
             header_up -Origin
