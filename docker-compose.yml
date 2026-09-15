@@ -27,26 +27,7 @@ services:
     container_name: log-prettifier
     volumes:
       - ./logs:/logs
-    # entrypoint: >
-    #   /bin/sh -c "apk add jq && 
-    #   for f in /logs/*.log; do 
-    #     tail -n +1 -f \"$$f\" | jq --unbuffered -r 'select(.status != null) | \"[\" + (.ts | strftime(\"%H:%M:%S\")) + \"] \" + (.status|tostring) + \" \" + .request.method + \" \" + .request.host + .request.uri' >> \"$${f%.log}.formatted.log\" & 
-    #   done; wait"
-    # entrypoint: >
-    #   /bin/sh -c "apk add jq && 
-    #   rm -f /logs/*.formatted.log && 
-    #   for f in /logs/*.log; do 
-    #     tail -n +1 -f \"$$f\" | jq --unbuffered -r 'select(.status != null) | \"[\" + (.ts | strftime(\"%H:%M:%S\")) + \"] \" + (.status|tostring) + \" \" + .request.method + \" \" + .request.host + .request.uri' >> \"$${f%.log}.formatted.log\" & 
-    #   done; wait"
-    # entrypoint: >
-    #   /bin/sh -c "apk add jq && 
-    #   rm -f /logs/*.formatted.log && 
-    #   for f in /logs/*.log; do 
-    #     tail -n +1 -f \"$$f\" | jq --unbuffered -r '
-    #       select(.status != null) | 
-    #       \"[\" + (.ts | floor | strftime(\"%H:%M:%S\")) + \"] [\(.level | upcase)] \(.status) \(.request.method) \(.request.host)\(.request.uri) [\(.request.client_ip)] (\((.duration * 1000) | floor)ms) \(.request.proto)\"
-    #     ' >> \"$${f%.log}.formatted.log\" & 
-    #   done; wait"
+    <<: *network
     entrypoint:
       - /bin/sh
       - -c
