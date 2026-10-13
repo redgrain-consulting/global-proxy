@@ -1,187 +1,187 @@
 {
-    debug
+	debug
 
-    servers {
-        trusted_proxies static private_ranges
-    }
+	servers {
+		trusted_proxies static private_ranges
+	}
 }
 
 (tls-config) {
-    tls /etc/caddy/certs/local.fullchain.crt /etc/caddy/certs/local.key
+	tls /etc/caddy/certs/local.fullchain.crt /etc/caddy/certs/local.key
 }
 
 # Arguments: {args[0]} = container name
 (laravel-vite) {
-    # 1. Match ALL paths that must be served by the Vite Dev Server (Port 5173)
-    @vite {
-        path /@vite-hmr* /@vite/* /@id/* /@fs/* /resources/* /node_modules/* /vendor/statamic/cp/build/*
-    }
+	# 1. Match ALL paths that must be served by the Vite Dev Server (Port 5173)
+	@vite {
+		path /@vite-hmr* /@vite/* /@id/* /@fs/* /resources/* /node_modules/* /vendor/statamic/cp/build/*
+	}
 
-    handle @vite {
-        # Check if this specific request is a WebSocket upgrade attempt
-        @isWS {
-            header Connection *Upgrade*
-            header Upgrade    websocket
-        }
+	handle @vite {
+		# Check if this specific request is a WebSocket upgrade attempt
+		@isWS {
+			header Connection *Upgrade*
+			header Upgrade websocket
+		}
 
-        # If it's a WebSocket (HMR), force the Upgrade headers
-        handle @isWS {
-            reverse_proxy {args[0]}:5173 {
-                header_up Host {host}
-                header_up Origin {>Origin}
-                header_up X-Real-IP {remote}
-                header_up Connection "Upgrade"
-                header_up Upgrade "websocket"
-            }
-        }
+		# If it's a WebSocket (HMR), force the Upgrade headers
+		handle @isWS {
+			reverse_proxy {args[0]}:5173 {
+				header_up Host {host}
+				header_up Origin {>Origin}
+				header_up X-Real-IP {remote}
+				header_up Connection "Upgrade"
+				header_up Upgrade "websocket"
+			}
+		}
 
-        # For standard GET requests (assets, node_modules), proxy WITHOUT Upgrade headers
-        handle {
-            reverse_proxy {args[0]}:5173 {
-                header_up Host {host}
-                header_up Origin {>Origin}
-                header_up X-Real-IP {remote}
-            }
-        }
-    }
+		# For standard GET requests (assets, node_modules), proxy WITHOUT Upgrade headers
+		handle {
+			reverse_proxy {args[0]}:5173 {
+				header_up Host {host}
+				header_up Origin {>Origin}
+				header_up X-Real-IP {remote}
+			}
+		}
+	}
 
-    # 2. Route all other traffic (PHP/Statamic) to Nginx (Port 80)
-    handle {
-        reverse_proxy {args[0]}:80 {
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-            header_up X-Forwarded-Proto https
-        }
-    }
+	# 2. Route all other traffic (PHP/Statamic) to Nginx (Port 80)
+	handle {
+		reverse_proxy {args[0]}:80 {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-Proto https
+		}
+	}
 }
 
 # Arguments: {args[0]} = container name
 (laravel-webpack) {
-    # Securely capture and pipe BrowserSync's WebSockets protocol stream
-    @websockets {
-        header Connection *Upgrade*
-        header Upgrade    websocket
-        path /browser-sync/*
-    }
+	# Securely capture and pipe BrowserSync's WebSockets protocol stream
+	@websockets {
+		header Connection *Upgrade*
+		header Upgrade websocket
+		path /browser-sync/*
+	}
 
-    handle @websockets {
-        reverse_proxy {args[0]}:3000 {
-            header_up Host {host}
-            header_up Origin {>Origin}
-            header_up X-Real-IP {remote}
-            header_up Connection "Upgrade"
-            header_up Upgrade "websocket"
-        }
-    }
+	handle @websockets {
+		reverse_proxy {args[0]}:3000 {
+			header_up Host {host}
+			header_up Origin {>Origin}
+			header_up X-Real-IP {remote}
+			header_up Connection "Upgrade"
+			header_up Upgrade "websocket"
+		}
+	}
 
-    # Proxy all standard web asset traffic through BrowserSync's port 3000
-    handle {
-        reverse_proxy {args[0]}:3000 {
-            header_up Host {host}
-            header_up Origin {>Origin}
-            header_up X-Real-IP {remote}
-        }
-    }
+	# Proxy all standard web asset traffic through BrowserSync's port 3000
+	handle {
+		reverse_proxy {args[0]}:3000 {
+			header_up Host {host}
+			header_up Origin {>Origin}
+			header_up X-Real-IP {remote}
+		}
+	}
 }
 
 # Arguments: {args[0]} = container name
 (turbo) {
-    handle {
-        # Check if this specific request is a WebSocket upgrade attempt
-        @isWS {
-            header Connection *Upgrade*
-            header Upgrade    websocket
-        }
+	handle {
+		# Check if this specific request is a WebSocket upgrade attempt
+		@isWS {
+			header Connection *Upgrade*
+			header Upgrade websocket
+		}
 
-        # If it's a WebSocket (HMR), force the Upgrade headers
-        handle @isWS {
-            reverse_proxy {args[0]}:3000 {
-                header_up Host {host}
-                header_up -Origin
-                header_up X-Real-IP {remote}
-                header_up Connection "Upgrade"
-                header_up Upgrade "websocket"
-                header_up X-Forwarded-Port 443
-                header_up X-Forwarded-Proto https
-            }
-        }
+		# If it's a WebSocket (HMR), force the Upgrade headers
+		handle @isWS {
+			reverse_proxy {args[0]}:3000 {
+				header_up Host {host}
+				header_up -Origin
+				header_up X-Real-IP {remote}
+				header_up Connection "Upgrade"
+				header_up Upgrade "websocket"
+				header_up X-Forwarded-Port 443
+				header_up X-Forwarded-Proto https
+			}
+		}
 
-        reverse_proxy {args[0]}:3000 {
-            header_up Host {host}
-            header_up -Origin
-            header_up X-Real-IP {remote}
-            header_up Connection {>Connection}
-            header_up Upgrade {>Upgrade}
-            header_up X-Forwarded-Port 443
-            header_up X-Forwarded-Proto https
-        }
-    }
+		reverse_proxy {args[0]}:3000 {
+			header_up Host {host}
+			header_up -Origin
+			header_up X-Real-IP {remote}
+			header_up Connection {>Connection}
+			header_up Upgrade {>Upgrade}
+			header_up X-Forwarded-Port 443
+			header_up X-Forwarded-Proto https
+		}
+	}
 }
 
 (react-router-v7) {
-    # Match only WebSocket-specific paths
-    @websockets {
-        header Connection *Upgrade*
-        header Upgrade    websocket
-        path /@vite-hmr*
-    }
+	# Match only WebSocket-specific paths
+	@websockets {
+		header Connection *Upgrade*
+		header Upgrade websocket
+		path /@vite-hmr*
+	}
 
-    handle @websockets {
-        reverse_proxy {args[0]}:3000 {
-            header_up Host {host}
-            header_up Origin {>Origin}
-            header_up X-Real-IP {remote}
-            header_up Connection "Upgrade"
-            header_up Upgrade "websocket"
-        }
-    }
+	handle @websockets {
+		reverse_proxy {args[0]}:3000 {
+			header_up Host {host}
+			header_up Origin {>Origin}
+			header_up X-Real-IP {remote}
+			header_up Connection "Upgrade"
+			header_up Upgrade "websocket"
+		}
+	}
 
-    handle {
-        reverse_proxy {args[0]}:3000 {
-            header_up Host {host}
-            header_up Origin {>Origin}
-            header_up X-Real-IP {remote}
-        }
-    }
+	handle {
+		reverse_proxy {args[0]}:3000 {
+			header_up Host {host}
+			header_up Origin {>Origin}
+			header_up X-Real-IP {remote}
+		}
+	}
 }
 
 (storybook) {
-    @websockets {
-        header Connection *Upgrade*
-        header Upgrade    websocket
-        path /@vite-hmr* /storybook-server-channel*
-    }
+	@websockets {
+		header Connection *Upgrade*
+		header Upgrade websocket
+		path /@vite-hmr* /storybook-server-channel*
+	}
 
-    handle @websockets {
-        reverse_proxy {args[0]}:6006 {
-            header_up Host localhost
+	handle @websockets {
+		reverse_proxy {args[0]}:6006 {
+			header_up Host localhost
 
-            # Some Vite versions require the Origin to match the Host
-            header_up Origin http://localhost:6006
+			# Some Vite versions require the Origin to match the Host
+			header_up Origin http://localhost:6006
 
-            header_up X-Real-IP {remote}
-            header_up Connection "Upgrade"
-            header_up Upgrade "websocket"
-        }
-    }
+			header_up X-Real-IP {remote}
+			header_up Connection "Upgrade"
+			header_up Upgrade "websocket"
+		}
+	}
 
-    handle {
-        reverse_proxy {args[0]}:6006 {
-            header_up Host localhost
-            header_up Origin http://localhost:6006
-            header_up X-Real-IP {remote}
-        }
-    }
+	handle {
+		reverse_proxy {args[0]}:6006 {
+			header_up Host localhost
+			header_up Origin http://localhost:6006
+			header_up X-Real-IP {remote}
+		}
+	}
 }
 
 (default) {
-    handle {
-        reverse_proxy {args[0]}:80 {
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-            header_up X-Forwarded-Proto https
-        }
-    }    
+	handle {
+		reverse_proxy {args[0]}:80 {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-Proto https
+		}
+	}
 }
 
 # --- Site Blocks ---
@@ -223,12 +223,12 @@ caffenero-catalyst.dev.redgrain.co.uk {
 }
 
 caffenero-catalyst-storybook.dev.redgrain.co.uk {
-    import tls-config
-    log {
+	import tls-config
+	log {
 		output file /data/logs/caffenero-catalyst-storybook.log
 		format json
 	}
-    import storybook caffenero-storybook-catalyst
+	import storybook caffenero-storybook-catalyst
 }
 
 caffenero-hydrogen.dev.redgrain.co.uk {
@@ -241,12 +241,12 @@ caffenero-hydrogen.dev.redgrain.co.uk {
 }
 
 caffenero-hydrogen-storybook.dev.redgrain.co.uk {
-    import tls-config
-    log {
+	import tls-config
+	log {
 		output file /data/logs/caffenero-hydrogen-storybook.log
 		format json
 	}
-    import storybook caffenero-storybook-hydrogen
+	import storybook caffenero-storybook-hydrogen
 }
 
 coffee1-website.dev.redgrain.co.uk {
@@ -268,10 +268,10 @@ harrisandhoole.dev.redgrain.co.uk {
 }
 
 tacobell-de.dev.redgrain.co.uk {
-    import tls-config
-    log {
-        output file /data/logs/tacobell-de.log
-        format json
-    }
-    import default tacobell-de
+	import tls-config
+	log {
+		output file /data/logs/tacobell-de.log
+		format json
+	}
+	import default tacobell-de
 }
