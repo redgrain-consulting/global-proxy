@@ -6,8 +6,12 @@
 	}
 }
 
+# Upstreams are <container name>{$UPSTREAM_SUFFIX}. Under docker compose the
+# suffix is unset and names resolve on the shared network; under Apple Container
+# it is the DNS domain (see .appcontainer/devcontainer.json).
+
 (tls-config) {
-	tls /etc/caddy/certs/local.fullchain.crt /etc/caddy/certs/local.key
+	tls /etc/caddy/certs/redgrain.co.uk.fullchain.crt /etc/caddy/certs/redgrain.co.uk.key
 }
 
 # Arguments: {args[0]} = container name
@@ -26,7 +30,7 @@
 
 		# If it's a WebSocket (HMR), force the Upgrade headers
 		handle @isWS {
-			reverse_proxy {args[0]}:5173 {
+			reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:5173 {
 				header_up Host {host}
 				header_up Origin {>Origin}
 				header_up X-Real-IP {remote}
@@ -37,7 +41,7 @@
 
 		# For standard GET requests (assets, node_modules), proxy WITHOUT Upgrade headers
 		handle {
-			reverse_proxy {args[0]}:5173 {
+			reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:5173 {
 				header_up Host {host}
 				header_up Origin {>Origin}
 				header_up X-Real-IP {remote}
@@ -47,7 +51,7 @@
 
 	# 2. Route all other traffic (PHP/Statamic) to Nginx (Port 80)
 	handle {
-		reverse_proxy {args[0]}:80 {
+		reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:80 {
 			header_up Host {host}
 			header_up X-Real-IP {remote}
 			header_up X-Forwarded-Proto https
@@ -65,7 +69,7 @@
 	}
 
 	handle @websockets {
-		reverse_proxy {args[0]}:3000 {
+		reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:3000 {
 			header_up Host {host}
 			header_up Origin {>Origin}
 			header_up X-Real-IP {remote}
@@ -76,7 +80,7 @@
 
 	# Proxy all standard web asset traffic through BrowserSync's port 3000
 	handle {
-		reverse_proxy {args[0]}:3000 {
+		reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:3000 {
 			header_up Host {host}
 			header_up Origin {>Origin}
 			header_up X-Real-IP {remote}
@@ -95,7 +99,7 @@
 
 		# If it's a WebSocket (HMR), force the Upgrade headers
 		handle @isWS {
-			reverse_proxy {args[0]}:3000 {
+			reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:3000 {
 				header_up Host {host}
 				header_up -Origin
 				header_up X-Real-IP {remote}
@@ -106,7 +110,7 @@
 			}
 		}
 
-		reverse_proxy {args[0]}:3000 {
+		reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:3000 {
 			header_up Host {host}
 			header_up -Origin
 			header_up X-Real-IP {remote}
@@ -127,7 +131,7 @@
 	}
 
 	handle @websockets {
-		reverse_proxy {args[0]}:3000 {
+		reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:3000 {
 			header_up Host {host}
 			header_up Origin {>Origin}
 			header_up X-Real-IP {remote}
@@ -137,7 +141,7 @@
 	}
 
 	handle {
-		reverse_proxy {args[0]}:3000 {
+		reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:3000 {
 			header_up Host {host}
 			header_up Origin {>Origin}
 			header_up X-Real-IP {remote}
@@ -153,7 +157,7 @@
 	}
 
 	handle @websockets {
-		reverse_proxy {args[0]}:6006 {
+		reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:6006 {
 			header_up Host localhost
 
 			# Some Vite versions require the Origin to match the Host
@@ -166,7 +170,7 @@
 	}
 
 	handle {
-		reverse_proxy {args[0]}:6006 {
+		reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:6006 {
 			header_up Host localhost
 			header_up Origin http://localhost:6006
 			header_up X-Real-IP {remote}
@@ -176,7 +180,7 @@
 
 (default) {
 	handle {
-		reverse_proxy {args[0]}:80 {
+		reverse_proxy {args[0]}{$UPSTREAM_SUFFIX}:80 {
 			header_up Host {host}
 			header_up X-Real-IP {remote}
 			header_up X-Forwarded-Proto https
