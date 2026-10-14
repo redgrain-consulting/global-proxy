@@ -40,6 +40,10 @@ RUN mkdir -p /config /data /etc/caddy
 # The extension bind-mounts the repo here (see "workspaceFolder").
 WORKDIR /workspaces/global-proxy
 
-# The extension always overrides this with its own keep-alive; set it anyway so
-# the image is usable with a plain `container run`.
-CMD ["sleep", "infinity"]
+# Start Caddy on boot when the container is opted in with DEV_AUTOSTART=true, so
+# a plain `container run` / `container start` (e.g. from Orchard) needs no
+# lifecycle hooks. The extension overrides CMD with its own keep-alive and runs
+# start.sh from postStartCommand instead.
+COPY entrypoint.sh /usr/local/bin/dev-entrypoint.sh
+RUN chmod +x /usr/local/bin/dev-entrypoint.sh
+CMD ["/usr/local/bin/dev-entrypoint.sh"]

@@ -3,3 +3,4 @@
 /certs
 /logs
 dedicated.ovpn
+.env
