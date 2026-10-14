@@ -37,6 +37,12 @@ ENV XDG_CONFIG_HOME=/config \
     XDG_DATA_HOME=/data
 RUN mkdir -p /config /data /etc/caddy
 
+# containerEnv only reaches the container's init process, not the Remote-SSH
+# sessions VS Code terminals and tasks run in. pam_env loads /etc/environment for
+# those, so mirror the forwarded agent socket here: without it, git over SSH in a
+# VS Code terminal has no key and fails with "Permission denied (publickey)".
+RUN printf 'SSH_AUTH_SOCK=/var/host-services/ssh-auth.sock\n' >> /etc/environment
+
 # The extension bind-mounts the repo here (see "workspaceFolder").
 WORKDIR /workspaces/global-proxy
 
