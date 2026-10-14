@@ -45,6 +45,16 @@ for c in "$STATAMIC" "$CATALYST" "$PROXY"; do
   fi
 done
 
+# 2b. Builder ----------------------------------------------------------------
+# The builder VM reserves 4 GB, and the three app containers reserve 13 GB of
+# this 16 GB host — with the builder up that overcommits and a container VM can
+# lock up (an unresponsive guest that stop/kill/rm all refuse). `container build`
+# starts it again on demand, so it does not need to linger.
+if container ls --quiet 2>/dev/null | grep -qx buildkit; then
+  echo "==> Stopping the builder (frees 4 GB; restarts on the next build)"
+  container builder stop >/dev/null 2>&1
+fi
+
 # 3. Daemons (normally postStartCommand) -------------------------------------
 echo "==> $PROXY: sshd + caddy + log-prettifier"
 container exec "$PROXY" bash /workspaces/global-proxy/.appcontainer/start.sh >/dev/null 2>&1
