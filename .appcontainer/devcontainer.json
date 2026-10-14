@@ -24,8 +24,11 @@
     // Keeps the build context to .appcontainer/ only.
     "context": ".appcontainer",
     "dockerfile": "Dockerfile",
-    // Apple's vmnet resolver fails to forward DNS under Tailscale MagicDNS, so pin
-    // public resolvers for the build (apt-get).
+    // Pin public resolvers for the build (apt-get). Apple's embedded DNS (the
+    // vmnet gateway, 192.168.64.1) only comes up when macOS's mDNSResponder can
+    // bind the wildcard *:53; a local resolver already on port 53 (dnsmasq,
+    // Zscaler, etc.) blocks that bind and leaves the gateway dead
+    // (apple/container#402). Pinning keeps the build resolving regardless.
     "options": ["--dns", "1.1.1.1", "--dns", "8.8.8.8"]
   },
   "remoteUser": "root",

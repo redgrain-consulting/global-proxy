@@ -22,8 +22,22 @@ Uses the [Apple Container Manager](https://marketplace.visualstudio.com/items?it
    ```bash
    container system stop && container system start
    ```
+
+   > **Port 53 must be free on the host.** Apple serves DNS to the containers
+   > from macOS's `mDNSResponder`, which binds the wildcard `*:53`. If another
+   > resolver already holds port 53 — `dnsmasq`, Zscaler, etc. — that bind fails,
+   > the vmnet gateway (192.168.64.1) ends up with nothing listening, and every
+   > container gets `ECONNREFUSED` for DNS (public names *and*
+   > `<name>.container.acm`). Check with `sudo lsof -i :53` and stop the offender,
+   > e.g. `sudo launchctl bootout system/homebrew.mxcl.dnsmasq`. See
+   > [apple/container#402](https://github.com/apple/container/issues/402).
+
 2. Rebuild each app container (catalyst, statamic and the rest) so it registers as `<name>.container.acm`.
-3. Open this folder in VS Code and run **Apple Container: Reopen Folder in Container**.
+3. Point each app at its dependencies by container name. For catalyst, set
+   `NEXT_PUBLIC_STATAMIC_GRAPHQL_API_URL=http://caffenero-statamic.container.acm/graphql`
+   in `.env.local`; the old `http://192.168.64.1:8080/graphql` assumed Statamic's
+   nginx was published on the host.
+4. Open this folder in VS Code and run **Apple Container: Reopen Folder in Container**.
 
 Caddy reloads automatically when the `Caddyfile` changes. Its output is in `/tmp/caddy.log` inside the container.
 
