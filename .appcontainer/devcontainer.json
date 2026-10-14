@@ -38,7 +38,7 @@
   "runArgs": ["--ssh"],
   // 80/443 (+ UDP 443 for HTTP/3) and 6006 match docker-compose.yml. Each
   // container needs a unique host port for SSH — catalyst holds 2222 and
-  // statamic 2223.
+  // statamic 2223 — so the SSH mapping must stay explicit.
   "forwardPorts": [80, 443, "443:443/udp", 6006, "2224:22"],
   "hostRequirements": {
     "cpus": 2,
