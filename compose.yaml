@@ -1,0 +1,85 @@
+# Apple Container compose file for the global Caddy reverse proxy.
+#
+# Run it with `container compose up` (or Orchard's Compose tab). This replaces the
+# old VS Code dev container (.appcontainer/): the proxy is a plain container now,
+# with no sshd / Remote-SSH or postStartCommand, so it can be brought up without
+# VS Code.
+#
+# Apple Container has no shared compose network, so Caddy reaches the app
+# containers by name through Apple's embedded DNS as <name>.container.acm. That
+# needs the one-time container.acm domain setup in README.md, and the proxy has to
+# be on the same network as those containers — the built-in `default` — which is
+# why this project joins it as an external network instead of creating its own.
+#
+# Only keys this plugin honours are used. It refuses rather than ignores an
+# unsupported key, so there is deliberately no `restart`, no `entrypoint` (set
+# `command` instead) and no named volumes: any of those would make `up` do
+# nothing at all.
+name: global-proxy
+
+services:
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Keep the container name the app containers and scripts/dev-up.sh expect.
+    container_name: global-proxy
+    command:
+      - caddy
+      - run
+      - --config
+      - /etc/caddy/Caddyfile
+      - --adapter
+      - caddyfile
+      # --watch reloads on Caddyfile edits (it polls, so it works over virtiofs).
+      - --watch
+    environment:
+      # Under Apple Container upstreams resolve as <name>.container.acm; the
+      # Caddyfile appends this suffix to every upstream host name.
+      UPSTREAM_SUFFIX: .container.acm
+    ports:
+      - "80:80" # HTTP
+      - "443:443" # HTTPS
+      - "443:443/udp" # HTTP/3
+      - "6006:6006" # Storybook
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./certs:/etc/caddy/certs
+      - ./logs:/data/logs
+    # 256 MiB is ample: Caddy peaks near 100 MiB. Every VM reserves its full
+    # configured memory on this 16 GB host, so keep it tight.
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 256M
+    networks:
+      - default
+
+  # Tails Caddy's JSON access logs into one-line-per-request *.formatted.log.
+  log-prettifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: global-proxy-log-prettifier
+    command:
+      - bash
+      - /usr/local/bin/log-prettifier.sh
+    volumes:
+      - ./logs:/logs
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          # 200 MiB is the floor Apple Container allows; the tailer needs almost
+          # none of it, but a lower limit is rejected outright.
+          memory: 200M
+    networks:
+      - default
+
+# Join the built-in network rather than letting the plugin create a project
+# network: Caddy can only reach the app containers if it shares their network, and
+# Apple Container gives a container exactly one network.
+networks:
+  default:
+    external: true

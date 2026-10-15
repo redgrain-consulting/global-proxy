@@ -1,0 +1,13 @@
+# Keep the build context small and free of local state. Only the Dockerfile and
+# scripts/log-prettifier.sh are actually copied into the image.
+.git
+.env
+.env.*
+logs
+certs
+Caddyfile
+compose.yaml
+docker-compose.yml
+README.md
+scripts/dev-up.sh
+.DS_Store
