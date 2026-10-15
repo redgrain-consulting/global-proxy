@@ -8,7 +8,7 @@
 
 # Upstreams are <container name>{$UPSTREAM_SUFFIX}. Under docker compose the
 # suffix is unset and names resolve on the shared network; under Apple Container
-# it is the DNS domain (see .appcontainer/devcontainer.json).
+# it is the DNS domain, set by UPSTREAM_SUFFIX in compose.yaml.
 
 (tls-config) {
 	tls /etc/caddy/certs/redgrain.co.uk.fullchain.crt /etc/caddy/certs/redgrain.co.uk.key

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# The log-prettifier compose service, run alongside Caddy in the same container.
 # Tails each Caddy JSON access log into a one-line-per-request *.formatted.log.
+#
+# Runs as its own compose service (see compose.yaml) off the image that ships
+# this script, with the repo's logs/ bind-mounted at /logs.
 set -u
 
-LOGS=/workspaces/global-proxy/logs
+LOGS=/logs
 
 rm -f "$LOGS"/*.formatted.log
 for f in "$LOGS"/*.log; do
