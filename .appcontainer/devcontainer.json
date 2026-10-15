@@ -40,9 +40,14 @@
   // container needs a unique host port for SSH — catalyst holds 2222 and
   // statamic 2223 — so the SSH mapping must stay explicit.
   "forwardPorts": [80, 443, "443:443/udp", 6006, "2224:22"],
+  // 256 MiB: this container only runs Caddy (about 57 MiB), sshd and the log
+  // prettifier, and peaks near 100 MiB — it never came close to the 1 GiB it used
+  // to reserve. Every VM on this 16 GB host reserves its full configured memory,
+  // so the rest goes back to the host; the app containers and the builder VM are
+  // the ones that need room.
   "hostRequirements": {
     "cpus": 2,
-    "memory": "1gb"
+    "memory": "256mb"
   },
   "containerEnv": {
     "UPSTREAM_SUFFIX": ".container.acm"
