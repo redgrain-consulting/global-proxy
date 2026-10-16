@@ -21,8 +21,9 @@
   // container existed can stay NXDOMAIN for a while.
   "name": "global-proxy",
   "build": {
-    // Keeps the build context to .appcontainer/ only.
-    "context": ".appcontainer",
+    // Both paths are relative to this file's folder (extension >= 0.9.7, per the
+    // devcontainer spec), so "." keeps the build context to .appcontainer/ only.
+    "context": ".",
     "dockerfile": "Dockerfile",
     // Pin public resolvers for the build (apt-get). Apple's embedded DNS (the
     // vmnet gateway, 192.168.64.1) only comes up when macOS's mDNSResponder can
@@ -42,7 +43,7 @@
   "forwardPorts": [80, 443, "443:443/udp", 6006, "2224:22"],
   "hostRequirements": {
     "cpus": 2,
-    "memory": "1gb"
+    "memory": "256mb"
   },
   "containerEnv": {
     "UPSTREAM_SUFFIX": ".container.acm"
