@@ -43,7 +43,7 @@
   "forwardPorts": [80, 443, "443:443/udp", 6006, "2224:22"],
   "hostRequirements": {
     "cpus": 2,
-    "memory": "1gb"
+    "memory": "256mb"
   },
   "containerEnv": {
     "UPSTREAM_SUFFIX": ".container.acm"
