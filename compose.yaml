@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # Keep the container name the app containers and scripts/dev-up.sh expect.
+    # Keep the container name the app containers reach over DNS.
     container_name: global-proxy
     command:
       - caddy
