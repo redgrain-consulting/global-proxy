@@ -114,8 +114,6 @@
 			header_up Host {host}
 			header_up -Origin
 			header_up X-Real-IP {remote}
-			header_up Connection {>Connection}
-			header_up Upgrade {>Upgrade}
 			header_up X-Forwarded-Port 443
 			header_up X-Forwarded-Proto https
 		}
